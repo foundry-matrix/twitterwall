@@ -1,0 +1,210 @@
+<html>
+<head>
+	<title>Twitter Wall</title>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+	<script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+	<style>
+
+		rect {
+		   -moz-transition: all 0.3s;
+		   -o-transition: all 0.3s;
+		   -webkit-transition: all 0.3s;
+		   transition: all 0.3s;
+		}
+
+		rect:hover {
+        	fill: orange;
+		}
+	</style>
+</head>
+<body>
+
+	<form id="tfnewsearch" onsubmit="")>
+		
+		<input type="radio" name="hashtag" value="go">#Go
+		<input type="radio" name="hashtag" value="stop">#Stop
+		<input type="radio" name="hashtag" value="cont">#Continue
+		
+	</form>
+
+	<div id="text">Tweet text</div>
+
+	<script type="text/javascript">
+	$(document).ready(function(){
+
+		var svgdata;
+		var padding = 30;
+		var h = 200;
+		var w = 600;
+		var dataset;
+
+		var svg = d3.select("body")
+			.append("svg")
+			.attr({
+				width: w,
+				height: h,
+		});
+
+		function fetch(){
+		//	setInterval(function(){
+				$.getJSON('http://localhost:8000/api', function(data){
+					
+					svgdata = data;
+					console.log("fetching");
+					console.log(svgdata);
+					dataset = svgdata.go;
+					update();
+				});
+			//}, 0000);
+		}
+
+		fetch();
+
+		// var svg2 = d3.select("body")
+		// 			.append("svg")
+		// 			.attr({
+		// 				width: w,
+		// 				height: h,
+		// 				y: 210
+		// 			});
+
+
+
+		// svgdata = {
+		// 	go: [
+		// 		{text: "Wedensday drinks!", retweetCount:20},
+		// 		{text: "Removing the door", retweetCount:1},
+		// 		{text: "Thursday drinks!", retweetCount:15},
+		// 		{text: "Keeping the door open", retweetCount:5},
+		// 		{text: "Friday drinks! ", retweetCount:13},
+		// 		{text: "Wedensday drinks!", retweetCount:4},
+		// 		{text: "Removing the door", retweetCount:25},
+		// 		{text: "Thursday drinks!", retweetCount:9},
+		// 		{text: "Keeping the door open", retweetCount:7},
+		// 		{text: "Friday drinks! ", retweetCount:14}
+		// 	],
+		// 	stop: [
+		// 		{text: "Wedensday drinks!", retweetCount:10},
+		// 		{text: "Removing the door", retweetCount:15},
+		// 		{text: "Thursday drinks!", retweetCount:50},
+		// 		{text: "Keeping the door open", retweetCount:5},
+		// 		{text: "Friday drinks! ", retweetCount:13},
+		// 	],
+		// 	cont: [
+		// 		{text: "Wedensday drinks!", retweetCount:4},
+		// 		{text: "Removing the door", retweetCount:1},
+		// 		{text: "Thursday drinks!", retweetCount:9},
+		// 		{text: "Keeping the door open", retweetCount:5},
+		// 		{text: "Friday drinks! ", retweetCount:13},
+		// 	]
+		// }
+		
+		
+	
+		
+		function update(){
+
+			$("rect").remove(); 
+			$("g").remove(); 
+
+			var retweets = [];
+			length = dataset.length;
+
+			dataset.forEach(function(d){
+				retweets.push(d.retweetCount);
+			});
+
+			console.log(retweets);
+
+			var yScale = d3.scale.linear()
+					 .domain([0, d3.max(retweets)])
+					 .range([h - padding, padding]);
+
+			console.log(d3.max(retweets));
+
+			//Define Y Axis
+			var yAxis = d3.svg.axis()
+						  .scale(yScale)
+						  .orient("left")
+						  .ticks(5);
+
+			//Create Y axis
+			svg.append("g")
+				.attr("class", "axis")
+				.attr("transform", "translate(" + padding + ",0)")
+				.call(yAxis);
+	
+			svg.selectAll("rect")
+				   .data(dataset)
+				   .enter()
+				   .append("rect")
+				   .attr("fill", function (d) { return "rgb(0, 0, " + (255 - d.retweetCount * 15) + ")" ;})
+				   .attr("x", function(d, i) {
+				   		console.log(d);
+				   		return i * ( w/length) + padding;
+
+				   })
+				   .attr("y", function(d) {
+				   		return yScale(d.retweetCount);
+				   })
+				   .attr("width", function(d){ return w/length})
+				   .attr("height", function(d) {
+				   		return h - padding - yScale(d.retweetCount);
+				   })
+
+					// rects.transition()
+					// 	  .attr("y", 100)
+					// 	  .duration(1000)
+					// 	  .delay(100) 
+
+				   // 	.on("mouseover", function() {
+				   // 		d3.select(this)
+				   // 			.attr("fill", "orange");
+				   // })
+				   // .on("mouseout", function(d) {
+					  //  d3.select(this)
+					  //  		.transition()
+					  //  		.duration(250)
+							// .attr("fill", function (d) { return "rgb(0, 0, " + (d.rt * 15) + ")" ;})
+				   // });
+	 
+
+
+		}
+
+
+
+		$("rect").mouseenter(function(){
+				var number = $(this).val();
+				console.log(number);
+				$("#text").html(dataset[0].text);
+		});
+
+
+ 		// $('rects').mouseenter(function () {
+   //          $(this).html("CALIFORNIA");
+   //      });
+   //      $('rects').mouseleave(function () {
+   //          $(this).html("CA");
+   //      });
+
+
+		$("#tfnewsearch").click(function(){
+	
+			var hashtag = $("input:radio[name=hashtag]:checked" ).val();
+
+			console.log(hashtag);
+
+			dataset = svgdata[hashtag];
+
+			console.log(dataset);
+
+			update();
+
+		});
+
+	});
+
+	</script>
+</body>
+</html>
