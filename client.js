@@ -23,7 +23,7 @@ twitter.stream('statuses/filter', {track: '@discofingers #stop, @discofingers #g
 
 //_________*** MongoDB ***_________//
 
-mongoose.connect('mongodb://foundrymatrix:foundrymatrix@ds048537.mongolab.com:48537/stopgocontinue');
+mongoose.connect('mongodb://gregaubs:gregaubs@ds052837.mongolab.com:52837/twitterwall');
 
 var Schema = mongoose.Schema;
 
