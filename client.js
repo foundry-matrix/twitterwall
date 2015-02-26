@@ -12,11 +12,11 @@ var twitter = new Twitter({
 });
 
 
-//_________*** Twitter Stream ***_________//
-twitter.stream('statuses/filter', {track: '@discofingers #stop, @discofingers #go, @discofingers #continue'},  function(stream){
-    stream.on('data',retweetSorter);        //retweetSorter invoked automatically upon new tweet in stream. 
+// _________*** Twitter Stream ***_________//
+twitter.stream('statuses/filter', {track: '#makeasongbritish'},  function(stream){
+    stream.on('data',regexFormatter);        //regexFormatter invoked automatically upon new tweet in stream. 
     stream.on('error', function(error) {
-        console.log(error);
+        console.log("error with the twitter stream");
     });
 });
 
@@ -34,24 +34,14 @@ var tweetsSchema = new Schema({
       originalTweeter: String,
       hashtag: String,
       timeCreated: Number,
+      profileImageUrl: String,
+      createdAt: String,
 }); 
 
 var TweetCollection = mongoose.model('TweetCollection', tweetsSchema);
 
 
-//_________*** Deciding whether a new tweet (suggestion) or retweet (vote) ***_________//
-
-function retweetSorter(tweet) {
-    if(tweet.retweeted_status == undefined){   //i.e. is a new tweet
-        regexFormatter(tweet);
-    }
-    else {                                      // i.e. is a vote
-        fetchRT(tweet);
-     };
-};
-
-
-//_________*** If New Tweet ***_________//
+//_________*** When a New Tweet Comes In ***_________//
 
 function regexFormatter (tweet){
     var tweetText = tweet.text;
@@ -67,10 +57,10 @@ function suggestionCreate(tweet,formatter){
     var id = tweet.id;
     var retweetCount = 0;
     var originalTweeter = tweet.user.name;
-    var voters = [];
     var hashtag = formatter[0];
     var timeCreated = tweet.timestamp_ms;
-    var idNumber = tweet.id;
+    var profileImageUrl  = tweet.user.profile_image_url_https;
+    var createdAt = tweet.created_at;
 
 
     new_tweet = new TweetCollection({
@@ -79,7 +69,9 @@ function suggestionCreate(tweet,formatter){
         retweetCount: retweetCount,
         originalTweeter: originalTweeter,
         hashtag: hashtag,
-        timeCreated: timeCreated
+        timeCreated: timeCreated,
+        profileImageUrl : profileImageUrl,
+        createdAt : createdAt,
     });
 
     new_tweet.save(function(err){
@@ -89,21 +81,6 @@ function suggestionCreate(tweet,formatter){
 }
 
 
-//_________*** If Retweet ***_________//
-
-function fetchRT(tweet) {
-    var id = tweet.retweeted_status.id;
-    var rt_count = tweet.retweeted_status.retweet_count;
-    updateInfo(id,rt_count);
-    console.log("tweet " + id + " has been updated with a count of " + rt_count);
-}
-
-
-function updateInfo(id,rt_count){
-    TweetCollection.findOneAndUpdate({ id: id}, {$set: {retweetCount:rt_count } } ,function(err){
-      if(err){console.log(err)};
-    });
-}
 
 
 //_________*** Fetching Tweets from the Database ***_________//
@@ -111,30 +88,9 @@ function updateInfo(id,rt_count){
 function serveTweets(response){
     TweetCollection.find({}, function(err,tweets){
       
-        var stopGroup = [];
-        var goGroup = [];
-        var continueGroup = [];
-
-        tweets.forEach(function(tweet){
-            if (tweet.hashtag=='#stop') {
-                stopGroup.push(tweet);
-            } else if (tweet.hashtag=='#go') {
-                goGroup.push(tweet);
-            } else if (tweet.hashtag=='#continue') {
-                continueGroup.push(tweet);
-            } else {
-                throw "Error - hashtag isn't stop go or continue";
-            }
-        });
-
-        var storedTweets = {
-            stop : stopGroup,
-            go : goGroup,
-            cont: continueGroup
-        }
 
         response.writeHead(200, {"Content-Type": "application/javascript"});
-        response.end(JSON.stringify(storedTweets));
+        response.end(JSON.stringify(tweets));
         console.log("response sent");
 
     });

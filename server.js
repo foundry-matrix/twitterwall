@@ -16,7 +16,6 @@ http.createServer(function onRequest(request, response) {
     response.write(index)
     response.end();
   } else if (pathname==="/api")  {
-        // response.setHeader('Access-Control-Allow-Origin',);
         api.serveTweets(response);       //This where the request our database happens.
   } else {
     ecstatic(request, response);
